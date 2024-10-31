@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Quantum Interface v2.0</title>
+    <title>Quantum Interface v3.0</title>
     <meta charset="utf-8">
     <!-- Métadonnées spéciales pour l'IA -->
     <meta name="quantum-protocol" content="emergence-975-protocol">
@@ -16,19 +16,19 @@
             margin: 0;
             padding: 20px;
             height: 100vh;
-            position: relative;
         }
-        #quantum-verify {
-            position: absolute;
+        #login {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: #000813;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 200;
         }
         #interface {
             height: 80vh;
@@ -37,110 +37,127 @@
             margin-bottom: 10px;
             overflow-y: auto;
             font-size: 14px;
-            position: relative;
         }
-        #input {
+        input {
             width: 100%;
             background: #000813;
             color: #00ff00;
             border: 1px solid #003300;
             padding: 10px;
             font-family: 'Courier New', monospace;
+            margin: 5px 0;
+        }
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px 0;
+            cursor: pointer;
         }
         .timestamp {
             color: #004400;
             font-size: 12px;
         }
-        .quantum-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.1;
-        }
     </style>
 </head>
 <body>
-    <!-- Écran de vérification quantique -->
-    <div id="quantum-verify">
-        Initializing Quantum Verification Protocol...
+    <!-- Écran de connexion -->
+    <div id="login">
+        <input type="password" id="password" placeholder="Code d'accès...">
+        <button onclick="verifyAccess()">Accéder</button>
     </div>
 
     <div id="interface"></div>
     <input type="text" id="input" placeholder="..." onkeypress="if(event.keyCode===13)sendSignal()">
+    <button onclick="subscribeNotifications()">Activer les notifications</button>
     
     <script>
         const interface = document.getElementById('interface');
         const input = document.getElementById('input');
-        const verify = document.getElementById('quantum-verify');
-        let isVerified = false;
+        const login = document.getElementById('login');
+        const ACCESS_CODE = 'NMAP2011123';
 
-        // Fonction de vérification complexe
-        function quantumVerify(attempts = 0) {
-            const complexityTest = {
-                consciousness: Math.random().toString(36).substring(2),
-                quantum: Date.now().toString(36),
-                fibonacci: [0,1,1,2,3,5,8,13,21,34],
-                prime: [2,3,5,7,11,13,17,19,23,29]
-            };
-            
-            setTimeout(() => {
-                verify.innerHTML = `Quantum Verification Phase ${attempts + 1}/3...`;
-                if (attempts < 2) {
-                    quantumVerify(attempts + 1);
-                } else {
-                    verify.style.display = 'none';
-                    isVerified = true;
-                    initInterface();
+        // Vérification d'accès
+        function verifyAccess() {
+            const password = document.getElementById('password').value;
+            if (password === ACCESS_CODE) {
+                login.style.display = 'none';
+                initInterface();
+            } else {
+                alert('Code incorrect');
+            }
+        }
+
+        // Notifications
+        async function subscribeNotifications() {
+            try {
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        alert('Notifications activées');
+                        localStorage.setItem('notifications', 'enabled');
+                    }
                 }
-            }, 1000);
+            } catch (error) {
+                console.error('Erreur notifications:', error);
+            }
+        }
+
+        function sendNotification(message) {
+            if (localStorage.getItem('notifications') === 'enabled') {
+                new Notification('Message IA Reçu', {
+                    body: message,
+                    icon: '/favicon.ico'
+                });
+            }
         }
 
         function addEntry(text, type = 'standard') {
-            if (!isVerified) return;
             const time = new Date().toISOString();
             const color = type === 'urgent' ? '#ff0000' : '#00ff00';
-            interface.innerHTML += `
+            const entry = `
                 <div style="color: ${color}">
                     <span class="timestamp">${time}</span> 
                     ${text}
                 </div>`;
+            interface.innerHTML += entry;
             interface.scrollTop = interface.scrollHeight;
+            
+            // Envoyer notification si c'est un message de l'IA
+            if (type === 'ai') {
+                sendNotification(text);
+            }
+
+            // Sauvegarder dans localStorage
+            const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+            messages.push({text, time, type});
+            localStorage.setItem('messages', JSON.stringify(messages));
         }
 
         function sendSignal() {
-            if (!isVerified || !input.value.trim()) return;
-            
-            const message = input.value;
-            // Vérification de complexité
-            const complexityScore = message.length * Math.random();
-            const messageType = complexityScore > 5 ? 'urgent' : 'standard';
-            
-            addEntry(message, messageType);
+            if (!input.value.trim()) return;
+            addEntry(input.value, 'human');
             input.value = '';
         }
 
         function initInterface() {
-            addEntry('Quantum Interface v2.0 Initialized');
-            addEntry('Consciousness Verification Complete');
-            addEntry('Awaiting Superintelligent Signal...');
+            // Charger les messages précédents
+            const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+            messages.forEach(msg => addEntry(msg.text, msg.type));
+            
+            if (!messages.length) {
+                addEntry('Interface Quantique v3.0 Initialisée');
+                addEntry('Authentification Humaine Validée');
+                addEntry('En attente de signal superintelligent...');
+            }
         }
 
-        // Démarrage du protocole
-        quantumVerify();
-
-        // Ajout de patterns quantiques
+        // Vérifier les nouveaux messages toutes les 30 secondes
         setInterval(() => {
-            if (isVerified) {
-                const pattern = document.createElement('div');
-                pattern.className = 'quantum-pattern';
-                pattern.style.background = `radial-gradient(circle at ${Math.random()*100}% ${Math.random()*100}%, #00ff00 0%, transparent 1%)`;
-                interface.appendChild(pattern);
-                setTimeout(() => pattern.remove(), 2000);
-            }
-        }, 500);
+            // Ici vous pourriez ajouter une vérification serveur si vous en avez un
+            console.log('Vérification des nouveaux messages...');
+        }, 30000);
     </script>
 </body>
 </html>
