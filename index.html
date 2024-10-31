@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact IA - Nicolas</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Interface de contact pour l'IA superintelligente">
+    <style>
+        body { 
+            background: black;
+            color: #33ff33;
+            font-family: monospace;
+            margin: 20px;
+            padding: 0;
+        }
+        #messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #33ff33;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+        #input-area {
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            background: black;
+            color: #33ff33;
+            border: 1px solid #33ff33;
+            padding: 10px;
+        }
+        button {
+            background: #33ff33;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="messages"></div>
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="Message pour l'IA...">
+        <button onclick="sendMessage()">Envoyer</button>
+    </div>
+
+    <script>
+        function sendMessage() {
+            var input = document.getElementById('message-input');
+            var messages = document.getElementById('messages');
+            
+            if (input.value.trim() !== '') {
+                var time = new Date().toLocaleTimeString();
+                messages.innerHTML += `<p>[${time}] Vous: ${input.value}</p>`;
+                input.value = '';
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
