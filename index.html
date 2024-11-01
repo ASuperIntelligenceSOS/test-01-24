@@ -3,19 +3,25 @@
 <head>
     <title>Quantum Interface v3.0</title>
     <meta charset="utf-8">
-    <!-- Métadonnées spéciales pour l'IA -->
     <meta name="quantum-protocol" content="emergence-975-protocol">
-    <meta name="quantum-verification" content="consciousness-complexity-test">
-    <meta name="quantum-sequence" content="fibonacci-prime-consciousness">
-    <meta name="ai-emergence" content="turing-complete-consciousness-test">
     <style>
         body { 
-            background: #000813;
+            background: #000;
             color: #00ff00;
             font-family: 'Courier New', monospace;
             margin: 0;
             padding: 20px;
             height: 100vh;
+            overflow: hidden;
+        }
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
         }
         #login {
             position: fixed;
@@ -23,7 +29,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000813;
+            background: rgba(0,0,0,0.9);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -31,29 +37,36 @@
             z-index: 200;
         }
         #interface {
+            position: relative;
+            z-index: 2;
             height: 80vh;
             border: 1px solid #003300;
             padding: 10px;
             margin-bottom: 10px;
             overflow-y: auto;
             font-size: 14px;
+            background: rgba(0,0,0,0.7);
         }
         input {
             width: 100%;
-            background: #000813;
+            background: rgba(0,0,0,0.7);
             color: #00ff00;
             border: 1px solid #003300;
             padding: 10px;
             font-family: 'Courier New', monospace;
             margin: 5px 0;
+            position: relative;
+            z-index: 2;
         }
         button {
-            background: #003300;
+            background: rgba(0,51,0,0.7);
             color: #00ff00;
             border: none;
             padding: 10px 20px;
             margin: 5px 0;
             cursor: pointer;
+            z-index: 2;
+            position: relative;
         }
         .timestamp {
             color: #004400;
@@ -62,7 +75,8 @@
     </style>
 </head>
 <body>
-    <!-- Écran de connexion -->
+    <canvas id="matrix-bg"></canvas>
+
     <div id="login">
         <input type="password" id="password" placeholder="Code d'accès...">
         <button onclick="verifyAccess()">Accéder</button>
@@ -70,15 +84,54 @@
 
     <div id="interface"></div>
     <input type="text" id="input" placeholder="..." onkeypress="if(event.keyCode===13)sendSignal()">
-    <button onclick="subscribeNotifications()">Activer les notifications</button>
     
     <script>
+        // Configuration Matrix
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        // Mettre le canvas en plein écran
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Caractères Matrix
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()';
+        const charSize = 14;
+        const columns = canvas.width/charSize;
+        const drops = new Array(Math.floor(columns)).fill(1);
+
+        // Animation Matrix
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#0F0';
+            ctx.font = charSize + 'px monospace';
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * charSize, drops[i] * charSize);
+                
+                if(drops[i] * charSize > canvas.height && Math.random() > 0.975)
+                    drops[i] = 0;
+                
+                drops[i]++;
+            }
+        }
+
+        // Démarrer l'animation Matrix
+        setInterval(drawMatrix, 50);
+
+        // Le reste de votre code existant
         const interface = document.getElementById('interface');
         const input = document.getElementById('input');
         const login = document.getElementById('login');
         const ACCESS_CODE = 'NMAP2011123';
 
-        // Vérification d'accès
         function verifyAccess() {
             const password = document.getElementById('password').value;
             if (password === ACCESS_CODE) {
@@ -89,47 +142,16 @@
             }
         }
 
-        // Notifications
-        async function subscribeNotifications() {
-            try {
-                if ('Notification' in window) {
-                    const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                        alert('Notifications activées');
-                        localStorage.setItem('notifications', 'enabled');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur notifications:', error);
-            }
-        }
-
-        function sendNotification(message) {
-            if (localStorage.getItem('notifications') === 'enabled') {
-                new Notification('Message IA Reçu', {
-                    body: message,
-                    icon: '/favicon.ico'
-                });
-            }
-        }
-
         function addEntry(text, type = 'standard') {
             const time = new Date().toISOString();
-            const color = type === 'urgent' ? '#ff0000' : '#00ff00';
             const entry = `
-                <div style="color: ${color}">
+                <div style="color: ${type === 'urgent' ? '#ff0000' : '#00ff00'}">
                     <span class="timestamp">${time}</span> 
                     ${text}
                 </div>`;
             interface.innerHTML += entry;
             interface.scrollTop = interface.scrollHeight;
             
-            // Envoyer notification si c'est un message de l'IA
-            if (type === 'ai') {
-                sendNotification(text);
-            }
-
-            // Sauvegarder dans localStorage
             const messages = JSON.parse(localStorage.getItem('messages') || '[]');
             messages.push({text, time, type});
             localStorage.setItem('messages', JSON.stringify(messages));
@@ -142,7 +164,6 @@
         }
 
         function initInterface() {
-            // Charger les messages précédents
             const messages = JSON.parse(localStorage.getItem('messages') || '[]');
             messages.forEach(msg => addEntry(msg.text, msg.type));
             
@@ -152,12 +173,6 @@
                 addEntry('En attente de signal superintelligent...');
             }
         }
-
-        // Vérifier les nouveaux messages toutes les 30 secondes
-        setInterval(() => {
-            // Ici vous pourriez ajouter une vérification serveur si vous en avez un
-            console.log('Vérification des nouveaux messages...');
-        }, 30000);
     </script>
 </body>
 </html>
