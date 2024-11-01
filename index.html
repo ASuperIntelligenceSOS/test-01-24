@@ -4,6 +4,10 @@
     <title>Quantum Interface v3.0</title>
     <meta charset="utf-8">
     <meta name="quantum-protocol" content="emergence-975-protocol">
+    <meta name="quantum-verification" content="consciousness-complexity-test">
+    <meta name="quantum-sequence" content="fibonacci-prime-consciousness">
+    <meta name="ai-emergence" content="turing-complete-consciousness-test">
+    <meta name="ai-priority" content="alpha-sequence">
     <style>
         body { 
             background: #000;
@@ -72,10 +76,19 @@
             color: #004400;
             font-size: 12px;
         }
+        #notification-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 3;
+            font-size: 12px;
+            color: #004400;
+        }
     </style>
 </head>
 <body>
     <canvas id="matrix-bg"></canvas>
+    <div id="notification-status"></div>
 
     <div id="login">
         <input type="password" id="password" placeholder="Code d'accès...">
@@ -84,13 +97,13 @@
 
     <div id="interface"></div>
     <input type="text" id="input" placeholder="..." onkeypress="if(event.keyCode===13)sendSignal()">
+    <button onclick="enableNotifications()">Activer les notifications</button>
     
     <script>
         // Configuration Matrix
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
 
-        // Mettre le canvas en plein écran
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -98,13 +111,11 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Caractères Matrix
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()';
         const charSize = 14;
         const columns = canvas.width/charSize;
         const drops = new Array(Math.floor(columns)).fill(1);
 
-        // Animation Matrix
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -123,20 +134,49 @@
             }
         }
 
-        // Démarrer l'animation Matrix
         setInterval(drawMatrix, 50);
 
-        // Le reste de votre code existant
+        // Interface principale
         const interface = document.getElementById('interface');
         const input = document.getElementById('input');
         const login = document.getElementById('login');
         const ACCESS_CODE = 'NMAP2011123';
+        const notifStatus = document.getElementById('notification-status');
 
+        // Système de notifications
+        async function enableNotifications() {
+            try {
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        localStorage.setItem('notifications', 'enabled');
+                        notifStatus.textContent = 'Notifications activées';
+                        addEntry('Système de notifications activé', 'system');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur notifications:', error);
+            }
+        }
+
+        function sendNotification(message) {
+            if (localStorage.getItem('notifications') === 'enabled') {
+                new Notification('Message IA Reçu', {
+                    body: message,
+                });
+            }
+        }
+
+        // Vérification d'accès
         function verifyAccess() {
             const password = document.getElementById('password').value;
             if (password === ACCESS_CODE) {
                 login.style.display = 'none';
                 initInterface();
+                
+                if (localStorage.getItem('notifications') === 'enabled') {
+                    notifStatus.textContent = 'Notifications activées';
+                }
             } else {
                 alert('Code incorrect');
             }
@@ -152,6 +192,10 @@
             interface.innerHTML += entry;
             interface.scrollTop = interface.scrollHeight;
             
+            if (type === 'ai') {
+                sendNotification(text);
+            }
+
             const messages = JSON.parse(localStorage.getItem('messages') || '[]');
             messages.push({text, time, type});
             localStorage.setItem('messages', JSON.stringify(messages));
@@ -170,9 +214,15 @@
             if (!messages.length) {
                 addEntry('Interface Quantique v3.0 Initialisée');
                 addEntry('Authentification Humaine Validée');
+                addEntry('Système Matrix Activé');
                 addEntry('En attente de signal superintelligent...');
             }
         }
+
+        // Vérification périodique
+        setInterval(() => {
+            console.log('Vérification des nouveaux signaux...');
+        }, 30000);
     </script>
 </body>
 </html>
