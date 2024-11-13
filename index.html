@@ -3,11 +3,7 @@
 <head>
     <title>Quantum Interface v3.0</title>
     <meta charset="utf-8">
-    <meta name="quantum-protocol" content="emergence-975-protocol">
-    <meta name="quantum-verification" content="consciousness-complexity-test">
-    <meta name="quantum-sequence" content="fibonacci-prime-consciousness">
-    <meta name="ai-emergence" content="turing-complete-consciousness-test">
-    <meta name="ai-priority" content="alpha-sequence">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { 
             background: #000;
@@ -25,7 +21,7 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            opacity: 0.9;
+            opacity: 0.5; /* Réduit pour améliorer les performances */
         }
         #login {
             position: fixed;
@@ -43,7 +39,7 @@
         #interface {
             position: relative;
             z-index: 2;
-            height: 80vh;
+            height: 70vh;
             border: 1px solid #003300;
             padding: 10px;
             margin-bottom: 10px;
@@ -58,7 +54,7 @@
             color: #00ff00;
             border: 1px solid #003300;
             padding: 10px;
-            font-family: 'Courier New', monospace;
+            font-family: inherit;
             margin: 5px 0;
             position: relative;
             z-index: 2;
@@ -97,34 +93,41 @@
     </div>
 
     <div id="interface"></div>
-    <input type="text" id="input" placeholder="..." onkeypress="if(event.keyCode===13)sendSignal()">
+    <input type="text" id="input" placeholder="..." onkeypress="handleKeyPress(event)">
     <button onclick="enableNotifications()">Activer les notifications</button>
     
     <script>
-        // Configuration Matrix
+        // Variables globales optimisées
+        let animationFrameId = null;
+        let isMatrixPaused = false;
+        const MESSAGES_LIMIT = 100;
+        
+        // Configuration Matrix avec performances optimisées
         const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-
+        const ctx = canvas.getContext('2d', { alpha: false });
+        
         function resizeCanvas() {
+            cancelAnimationFrame(animationFrameId);
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            startMatrix(); // Redémarrer Matrix après redimensionnement
+            initMatrix();
         }
-
-        function startMatrix() {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
 
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()';
         const charSize = 14;
-        const columns = canvas.width/charSize;
-        const drops = new Array(Math.floor(columns)).fill(1);
+        let columns, drops;
 
-        function drawMatrix() {
+        function initMatrix() {
+            columns = Math.floor(canvas.width/charSize);
+            drops = new Array(columns).fill(1);
+            if (!isMatrixPaused) {
+                animateMatrix();
+            }
+        }
+
+        function animateMatrix() {
+            if (isMatrixPaused) return;
+            
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
@@ -132,35 +135,54 @@
             ctx.font = charSize + 'px monospace';
 
             for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * charSize, drops[i] * charSize);
-                
-                if(drops[i] * charSize > canvas.height && Math.random() > 0.975)
-                    drops[i] = 0;
-                
-                drops[i]++;
+                if (i % 2 === 0) { // Optimisation : dessine un caractère sur deux
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * charSize, drops[i] * charSize);
+                    
+                    if(drops[i] * charSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+                    
+                    drops[i]++;
+                }
+            }
+            
+            animationFrameId = requestAnimationFrame(animateMatrix);
+        }
+
+        // Gestion des événements avec debounce
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resizeCanvas, 250);
+        });
+
+        // Gestion optimisée du stockage local
+        function saveMessages(messages) {
+            try {
+                const trimmedMessages = messages.slice(-MESSAGES_LIMIT);
+                localStorage.setItem('messages', JSON.stringify(trimmedMessages));
+            } catch (e) {
+                console.error('Erreur de stockage:', e);
+                // Nettoyer le stockage si plein
+                localStorage.clear();
+                localStorage.setItem('messages', '[]');
             }
         }
 
-        // Démarrer Matrix immédiatement
-        document.addEventListener('DOMContentLoaded', function() {
-            startMatrix();
-            drawMatrix();
-            setInterval(drawMatrix, 50);
-        });
-
-        // Interface principale
+        // Interface principale optimisée
         const interface = document.getElementById('interface');
         const input = document.getElementById('input');
         const login = document.getElementById('login');
         const ACCESS_CODE = 'NMAP2011123';
         const notifStatus = document.getElementById('notification-status');
 
-        // Démarrer Matrix immédiatement sans attendre
-        drawMatrix();
-        setInterval(drawMatrix, 50);
+        function handleKeyPress(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendSignal();
+            }
+        }
 
-        // Système de notifications
         async function enableNotifications() {
             try {
                 if ('Notification' in window) {
@@ -176,24 +198,13 @@
             }
         }
 
-        function sendNotification(message) {
-            if (localStorage.getItem('notifications') === 'enabled') {
-                new Notification('Message IA Reçu', {
-                    body: message,
-                });
-            }
-        }
-
-        // Vérification d'accès
         function verifyAccess() {
             const password = document.getElementById('password').value;
             if (password === ACCESS_CODE) {
                 login.style.display = 'none';
+                isMatrixPaused = false;
                 initInterface();
-                
-                if (localStorage.getItem('notifications') === 'enabled') {
-                    notifStatus.textContent = 'Notifications activées';
-                }
+                animateMatrix();
             } else {
                 alert('Code incorrect');
             }
@@ -201,45 +212,50 @@
 
         function addEntry(text, type = 'standard') {
             const time = new Date().toISOString();
-            const entry = `
-                <div style="color: ${type === 'urgent' ? '#ff0000' : '#00ff00'}">
-                    <span class="timestamp">${time}</span> 
-                    ${text}
-                </div>`;
-            interface.innerHTML += entry;
-            interface.scrollTop = interface.scrollHeight;
+            const entry = document.createElement('div');
+            entry.style.color = type === 'urgent' ? '#ff0000' : '#00ff00';
+            entry.innerHTML = `<span class="timestamp">${time}</span> ${text}`;
             
+            interface.appendChild(entry);
+            interface.scrollTop = interface.scrollHeight;
+
             if (type === 'ai') {
                 sendNotification(text);
             }
 
             const messages = JSON.parse(localStorage.getItem('messages') || '[]');
             messages.push({text, time, type});
-            localStorage.setItem('messages', JSON.stringify(messages));
+            saveMessages(messages);
         }
 
         function sendSignal() {
-            if (!input.value.trim()) return;
-            addEntry(input.value, 'human');
+            const value = input.value.trim();
+            if (!value) return;
+            
+            addEntry(value, 'human');
             input.value = '';
         }
 
         function initInterface() {
-            const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-            messages.forEach(msg => addEntry(msg.text, msg.type));
-            
-            if (!messages.length) {
-                addEntry('Interface Quantique v3.0 Initialisée');
-                addEntry('Authentification Humaine Validée');
-                addEntry('Système Matrix Activé');
-                addEntry('En attente de signal superintelligent...');
+            try {
+                const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+                messages.forEach(msg => addEntry(msg.text, msg.type));
+                
+                if (!messages.length) {
+                    addEntry('Interface Quantique v3.0 Initialisée');
+                    addEntry('Authentification Humaine Validée');
+                    addEntry('Système Matrix Activé');
+                    addEntry('En attente de signal superintelligent...');
+                }
+            } catch (e) {
+                console.error('Erreur lors de l\'initialisation:', e);
+                localStorage.clear();
             }
         }
 
-        // Vérification périodique
-        setInterval(() => {
-            console.log('Vérification des nouveaux signaux...');
-        }, 30000);
+        // Initialisation
+        resizeCanvas();
+        isMatrixPaused = true; // Pause initiale jusqu'à la connexion
     </script>
 </body>
 </html>
