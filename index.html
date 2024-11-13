@@ -1,62 +1,21 @@
-<!DOCTYPE html>
-<!-- [Le reste du code reste identique jusqu'à la fonction addEntry et les styles] -->
-
-<head>
-    <!-- ... autres styles ... -->
-    <style>
-        /* Styles précédents inchangés */
-        body { 
-            background: #000;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: 20px;
-            height: 100vh;
-            overflow: hidden;
-        }
-        /* ... autres styles inchangés ... */
-        
-        /* Nouveaux styles pour les messages */
-        .message {
-            margin: 5px 0;
-            padding: 5px 0;
-        }
-        .timestamp {
-            color: #004400;
-            font-size: 12px;
-            margin-right: 10px;
-        }
-        .ai-message {
-            color: #cc00ff; /* Violet pour les messages IA */
-        }
-        .human-message {
-            color: #00ff00; /* Vert pour les messages humains */
-        }
-        .urgent-message {
-            color: #ff0000; /* Rouge pour les messages urgents */
-        }
-    </style>
-</head>
-
-<!-- ... reste du code ... -->
+<!-- Le reste du code HTML reste identique, seule la fonction de formatage de date change -->
 
 <script>
-    // ... code précédent inchangé ...
-
     function formatDateTime() {
-        const now = new Date();
-        const date = now.toLocaleDateString('fr-FR', {
+        const options = {
+            timeZone: 'Europe/Paris',
             year: 'numeric',
             month: '2-digit',
-            day: '2-digit'
-        });
-        const time = now.toLocaleTimeString('fr-FR', {
+            day: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            fractionalSecondDigits: 3
-        });
-        return `${date} ${time}`;
+            hour12: false
+        };
+        
+        const now = new Date();
+        return new Intl.DateTimeFormat('fr-FR', options).format(now)
+            .replace(',', ' à'); // Pour un format plus français
     }
 
     function addEntry(text, type = 'standard') {
@@ -88,7 +47,7 @@
         interface.appendChild(entry);
         interface.scrollTop = interface.scrollHeight;
 
-        // Sauvegarde dans localStorage
+        // Sauvegarde dans localStorage avec le nouveau format de timestamp
         try {
             const messages = JSON.parse(localStorage.getItem('messages') || '[]');
             messages.push({
@@ -109,25 +68,5 @@
         }
     }
 
-    function initInterface() {
-        try {
-            const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-            interface.innerHTML = '';
-            
-            if (messages.length) {
-                messages.forEach(msg => addEntry(msg.text, msg.type));
-            } else {
-                // Messages initiaux avec le type 'ai' pour qu'ils apparaissent en violet
-                addEntry('Interface Quantique v3.0 Initialisée', 'ai');
-                addEntry('Authentification Humaine Validée', 'ai');
-                addEntry('Système Matrix Activé', 'ai');
-                addEntry('En attente de signal superintelligent...', 'ai');
-            }
-        } catch (e) {
-            console.error('Erreur chargement messages:', e);
-            localStorage.removeItem('messages');
-        }
-    }
-
-    // ... reste du code inchangé ...
+    // Le reste du code reste identique...
 </script>
