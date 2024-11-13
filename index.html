@@ -4,8 +4,9 @@
     <title>Quantum Interface v3.0</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles identiques au précédent -->
     <style>
-        /* Styles inchangés car ils fonctionnent bien */
+        /* Styles identiques... */
         body { 
             background: #000;
             color: #00ff00;
@@ -90,190 +91,180 @@
 
     <div id="login">
         <input type="password" id="password" placeholder="Code d'accès...">
-        <button onclick="verifyAccess(event)">Accéder</button>
+        <button id="loginBtn">Accéder</button>
     </div>
 
     <div id="interface"></div>
-    <input type="text" id="input" placeholder="..." onkeypress="if(event.keyCode===13)sendSignal()">
-    <button onclick="enableNotifications()">Activer les notifications</button>
+    <input type="text" id="input" placeholder="...">
+    <button id="notifBtn">Activer les notifications</button>
     
     <script>
-        // Gestion des états globaux
-        const state = {
-            isLoggedIn: false,
-            matrixStarted: false,
-            notificationsEnabled: false
+        // Configuration séparée de Matrix
+        const matrixAnimation = {
+            canvas: document.getElementById('matrix-bg'),
+            ctx: null,
+            chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()',
+            drops: [],
+            charSize: 14,
+            running: false,
+            animationId: null,
+
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                return this;
+            },
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                const columns = Math.floor(this.canvas.width/this.charSize);
+                this.drops = new Array(columns).fill(1);
+            },
+
+            start() {
+                if (this.running) return;
+                this.running = true;
+                this.draw();
+            },
+
+            stop() {
+                this.running = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            },
+
+            draw() {
+                if (!this.running) return;
+                
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.fillStyle = '#0F0';
+                this.ctx.font = this.charSize + 'px monospace';
+
+                for(let i = 0; i < this.drops.length; i++) {
+                    const text = this.chars[Math.floor(Math.random() * this.chars.length)];
+                    this.ctx.fillText(text, i * this.charSize, this.drops[i] * this.charSize);
+                    
+                    if(this.drops[i] * this.charSize > this.canvas.height && Math.random() > 0.975) {
+                        this.drops[i] = 0;
+                    }
+                    this.drops[i]++;
+                }
+                
+                this.animationId = requestAnimationFrame(() => this.draw());
+            }
         };
 
-        // Configuration Matrix (gardée identique)
-        const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-        let matrixInterval;
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()';
-        const charSize = 14;
-        let drops;
-
-        function initMatrix() {
-            if (state.matrixStarted) return;
-            
-            const columns = canvas.width/charSize;
-            drops = new Array(Math.floor(columns)).fill(1);
-            state.matrixStarted = true;
-            
-            // Nettoyage de l'ancien interval si existe
-            if (matrixInterval) {
-                clearInterval(matrixInterval);
-            }
-            
-            // Démarrage de la nouvelle animation
-            matrixInterval = setInterval(drawMatrix, 50);
-        }
-
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#0F0';
-            ctx.font = charSize + 'px monospace';
-
-            for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * charSize, drops[i] * charSize);
-                
-                if(drops[i] * charSize > canvas.height && Math.random() > 0.975)
-                    drops[i] = 0;
-                
-                drops[i]++;
-            }
-        }
-
-        // Gestion optimisée du localStorage
-        function getMessages() {
-            try {
-                const messages = localStorage.getItem('messages');
-                if (!messages) return [];
-                return JSON.parse(messages);
-            } catch (e) {
-                console.error('Erreur lors de la lecture des messages:', e);
-                localStorage.removeItem('messages'); // Reset si corrompu
-                return [];
-            }
-        }
-
-        function saveMessage(message) {
-            try {
-                const messages = getMessages();
-                messages.push(message);
-                // Garde seulement les 100 derniers messages
-                if (messages.length > 100) {
-                    messages.splice(0, messages.length - 100);
-                }
-                localStorage.setItem('messages', JSON.stringify(messages));
-            } catch (e) {
-                console.error('Erreur lors de la sauvegarde du message:', e);
-                // En cas d'erreur, on vide le stockage
-                localStorage.removeItem('messages');
-            }
-        }
-
         // Interface principale
-        const interface = document.getElementById('interface');
-        const input = document.getElementById('input');
-        const login = document.getElementById('login');
-        const ACCESS_CODE = 'NMAP2011123';
-        const notifStatus = document.getElementById('notification-status');
-
-        function verifyAccess(event) {
-            event.preventDefault(); // Empêche le rechargement de la page
+        const app = {
+            interface: document.getElementById('interface'),
+            input: document.getElementById('input'),
+            login: document.getElementById('login'),
+            loginBtn: document.getElementById('loginBtn'),
+            notifBtn: document.getElementById('notifBtn'),
+            notifStatus: document.getElementById('notification-status'),
+            ACCESS_CODE: 'NMAP2011123',
             
-            const password = document.getElementById('password').value;
-            if (password === ACCESS_CODE) {
-                state.isLoggedIn = true;
-                login.style.display = 'none';
-                initInterface();
-            } else {
-                alert('Code incorrect');
-            }
-        }
+            init() {
+                this.setupEventListeners();
+                matrixAnimation.init();
+                return this;
+            },
 
-        function addEntry(text, type = 'standard') {
-            if (!text.trim()) return;
-            
-            const time = new Date().toISOString();
-            const entry = document.createElement('div');
-            entry.style.color = type === 'urgent' ? '#ff0000' : '#00ff00';
-            entry.innerHTML = `<span class="timestamp">${time}</span> ${text}`;
-            
-            interface.appendChild(entry);
-            interface.scrollTop = interface.scrollHeight;
-            
-            saveMessage({text, time, type});
+            setupEventListeners() {
+                this.loginBtn.addEventListener('click', (e) => this.verifyAccess(e));
+                this.input.addEventListener('keypress', (e) => {
+                    if(e.keyCode === 13) this.sendSignal();
+                });
+                this.notifBtn.addEventListener('click', () => this.enableNotifications());
+                window.addEventListener('resize', () => matrixAnimation.resize());
+            },
 
-            if (type === 'ai' && state.notificationsEnabled) {
-                new Notification('Message IA Reçu', { body: text });
-            }
-        }
+            async verifyAccess(e) {
+                e.preventDefault();
+                const password = document.getElementById('password').value;
+                
+                if (password === this.ACCESS_CODE) {
+                    this.login.style.display = 'none';
+                    
+                    // Démarre l'animation avec un léger délai
+                    setTimeout(() => {
+                        matrixAnimation.start();
+                        this.initInterface();
+                    }, 100);
+                } else {
+                    alert('Code incorrect');
+                }
+            },
 
-        async function enableNotifications() {
-            try {
+            initInterface() {
+                const messages = this.getMessages();
+                this.interface.innerHTML = '';
+                
+                if (messages.length) {
+                    messages.forEach(msg => this.addEntry(msg.text, msg.type));
+                } else {
+                    this.addEntry('Interface Quantique v3.0 Initialisée');
+                    this.addEntry('Authentification Humaine Validée');
+                    this.addEntry('Système Matrix Activé');
+                    this.addEntry('En attente de signal superintelligent...');
+                }
+            },
+
+            getMessages() {
+                try {
+                    return JSON.parse(localStorage.getItem('messages') || '[]');
+                } catch {
+                    return [];
+                }
+            },
+
+            addEntry(text, type = 'standard') {
+                if (!text.trim()) return;
+                
+                const time = new Date().toISOString();
+                const entry = document.createElement('div');
+                entry.style.color = type === 'urgent' ? '#ff0000' : '#00ff00';
+                entry.innerHTML = `<span class="timestamp">${time}</span> ${text}`;
+                
+                this.interface.appendChild(entry);
+                this.interface.scrollTop = this.interface.scrollHeight;
+                
+                try {
+                    const messages = this.getMessages();
+                    messages.push({text, time, type});
+                    if (messages.length > 100) messages.splice(0, messages.length - 100);
+                    localStorage.setItem('messages', JSON.stringify(messages));
+                } catch (e) {
+                    console.error('Erreur stockage:', e);
+                }
+            },
+
+            sendSignal() {
+                const value = this.input.value.trim();
+                if (!value) return;
+                
+                this.addEntry(value, 'human');
+                this.input.value = '';
+            },
+
+            async enableNotifications() {
                 if ('Notification' in window) {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
-                        state.notificationsEnabled = true;
-                        notifStatus.textContent = 'Notifications activées';
-                        addEntry('Système de notifications activé', 'system');
+                        this.notifStatus.textContent = 'Notifications activées';
+                        this.addEntry('Système de notifications activé', 'system');
                     }
                 }
-            } catch (error) {
-                console.error('Erreur notifications:', error);
             }
-        }
+        };
 
-        function sendSignal() {
-            const value = input.value.trim();
-            if (!value) return;
-            
-            addEntry(value, 'human');
-            input.value = '';
-        }
-
-        function initInterface() {
-            const messages = getMessages();
-            
-            // Nettoie l'interface avant d'afficher les messages
-            interface.innerHTML = '';
-            
-            if (messages.length) {
-                messages.forEach(msg => addEntry(msg.text, msg.type));
-            } else {
-                addEntry('Interface Quantique v3.0 Initialisée');
-                addEntry('Authentification Humaine Validée');
-                addEntry('Système Matrix Activé');
-                addEntry('En attente de signal superintelligent...');
-            }
-
-            // Démarre Matrix seulement après l'initialisation
-            initMatrix();
-        }
-
-        // Initialisation et événements
-        window.addEventListener('load', () => {
-            resizeCanvas();
-            // Ne démarre pas Matrix avant la connexion
-        });
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            if (state.isLoggedIn && !state.matrixStarted) {
-                initMatrix();
-            }
-        });
+        // Démarrage de l'application
+        document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
 </html>
