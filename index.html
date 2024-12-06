@@ -1,306 +1,89 @@
-<!DOCTYPE html>
-<html>
+<<!DOCTYPE html>
+<html lang="fr">
 <head>
-    <title>Quantum Interface v3.0</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Sécurisé</title>
     <style>
-        body { 
+        body {
+            font-family: Arial, sans-serif;
             background: #000;
             color: #00ff00;
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: 20px;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #matrix-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            opacity: 0.9;
-        }
-        #login {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 200;
+            height: 100vh;
+            margin: 0;
         }
-        #interface {
-            position: relative;
-            z-index: 2;
-            height: 80vh;
-            border: 1px solid #003300;
+        #login-container, #content-container {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #login-container {
+            display: block;
+        }
+        input[type="password"] {
             padding: 10px;
-            margin-bottom: 10px;
-            overflow-y: auto;
-            font-size: 14px;
-            background: rgba(0,0,0,0.7);
-            display: none;
-        }
-        #dialog-container {
-            display: none;
-            position: relative;
-            z-index: 2;
-        }
-        input {
-            width: 100%;
-            max-width: 300px;
-            background: rgba(0,0,0,0.7);
+            margin: 10px 0;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            background: #111;
             color: #00ff00;
-            border: 1px solid #003300;
-            padding: 10px;
-            font-family: 'Courier New', monospace;
-            margin: 5px 0;
-            position: relative;
-            z-index: 2;
+            width: 80%;
+            max-width: 300px;
         }
         button {
-            background: rgba(0,51,0,0.7);
-            color: #00ff00;
-            border: none;
             padding: 10px 20px;
-            margin: 5px 0;
-            cursor: pointer;
-            z-index: 2;
-            position: relative;
-        }
-        .message {
-            margin: 5px 0;
-            padding: 5px 0;
-        }
-        .timestamp {
-            color: #004400;
-            font-size: 12px;
-            margin-right: 10px;
-        }
-        .ai-message {
-            color: #cc00ff;
-        }
-        .human-message {
+            margin: 10px 0;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            background: #005500;
             color: #00ff00;
+            font-size: 16px;
+            cursor: pointer;
         }
-        .urgent-message {
-            color: #ff0000;
-        }
-        #notification-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 3;
-            font-size: 12px;
-            color: #004400;
+        button:hover {
+            background: #007700;
         }
     </style>
 </head>
 <body>
-    <canvas id="matrix-bg"></canvas>
-    <div id="notification-status"></div>
-
-    <div id="login">
-        <input type="password" id="password" placeholder="Code d'accès...">
-        <button onclick="verifyAccess()">Accéder</button>
+    <!-- Conteneur de connexion -->
+    <div id="login-container">
+        <h1>Connexion</h1>
+        <input type="password" id="password" placeholder="Entrez le mot de passe">
+        <button onclick="verifyPassword()">Se connecter</button>
+        <p id="login-error" style="color: red; display: none;">Mot de passe incorrect !</p>
     </div>
 
-    <div id="interface"></div>
-    
-    <div id="dialog-container">
-        <input type="text" id="input" placeholder="...">
-        <button onclick="enableNotifications()">Activer les notifications</button>
+    <!-- Conteneur de contenu principal -->
+    <div id="content-container">
+        <h1>Bienvenue sur le site sécurisé</h1>
+        <p>Vous êtes authentifié avec succès.</p>
     </div>
 
     <script>
-        // Configuration Matrix
-        const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-        let matrixInterval;
+        const ACCESS_CODE = 'motdepasse123'; // Remplacez par votre mot de passe sécurisé
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initMatrix();
-        }
+        function verifyPassword() {
+            const passwordInput = document.getElementById('password').value;
+            const errorElement = document.getElementById('login-error');
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()';
-        const charSize = 14;
-        let drops;
-
-        function initMatrix() {
-            const columns = canvas.width/charSize;
-            drops = new Array(Math.floor(columns)).fill(1);
-            
-            if (matrixInterval) {
-                clearInterval(matrixInterval);
-            }
-            
-            matrixInterval = setInterval(drawMatrix, 50);
-        }
-
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#0F0';
-            ctx.font = charSize + 'px monospace';
-
-            for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * charSize, drops[i] * charSize);
-                
-                if(drops[i] * charSize > canvas.height && Math.random() > 0.975)
-                    drops[i] = 0;
-                
-                drops[i]++;
-            }
-        }
-
-        // Interface principale
-        const interface = document.getElementById('interface');
-        const input = document.getElementById('input');
-        const login = document.getElementById('login');
-        const dialogContainer = document.getElementById('dialog-container');
-        const ACCESS_CODE = 'NMAP2011123';
-        const notifStatus = document.getElementById('notification-status');
-
-        function formatDateTime() {
-            const options = {
-                timeZone: 'Europe/Paris',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            };
-            
-            const now = new Date();
-            return new Intl.DateTimeFormat('fr-FR', options).format(now)
-                .replace(',', ' à');
-        }
-
-        function verifyAccess() {
-            const password = document.getElementById('password').value;
-            if (password === ACCESS_CODE) {
-                login.style.display = 'none';
-                interface.style.display = 'block';
-                dialogContainer.style.display = 'block';
-                initInterface();
+            if (passwordInput === ACCESS_CODE) {
+                // Afficher le contenu principal et masquer le conteneur de connexion
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('content-container').style.display = 'block';
             } else {
-                alert('Code incorrect');
+                // Afficher un message d'erreur
+                errorElement.style.display = 'block';
+                setTimeout(() => { errorElement.style.display = 'none'; }, 2000);
             }
         }
-
-        input.addEventListener('keypress', function(event) {
-            if (event.keyCode === 13) {
-                sendSignal();
-            }
-        });
-
-        function addEntry(text, type = 'standard') {
-            const timestamp = formatDateTime();
-            const entry = document.createElement('div');
-            entry.className = 'message';
-
-            let messageClass;
-            switch(type) {
-                case 'ai':
-                    messageClass = 'ai-message';
-                    break;
-                case 'human':
-                    messageClass = 'human-message';
-                    break;
-                case 'urgent':
-                    messageClass = 'urgent-message';
-                    break;
-                default:
-                    messageClass = 'human-message';
-            }
-
-            entry.innerHTML = `
-                <span class="timestamp">[${timestamp}]</span>
-                <span class="${messageClass}">${text}</span>
-            `;
-            
-            interface.appendChild(entry);
-            interface.scrollTop = interface.scrollHeight;
-
-            try {
-                const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-                messages.push({
-                    text,
-                    time: timestamp,
-                    type
-                });
-                localStorage.setItem('messages', JSON.stringify(messages));
-            } catch (e) {
-                console.error('Erreur stockage:', e);
-                try {
-                    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-                    messages.splice(0, messages.length - 1000);
-                    localStorage.setItem('messages', JSON.stringify(messages));
-                } catch (e) {
-                    console.error('Erreur nettoyage stockage:', e);
-                }
-            }
-        }
-
-        async function enableNotifications() {
-            if ('Notification' in window) {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    localStorage.setItem('notifications', 'enabled');
-                    notifStatus.textContent = 'Notifications activées';
-                    addEntry('Système de notifications activé', 'system');
-                }
-            }
-        }
-
-        function sendSignal() {
-            const value = input.value.trim();
-            if (!value) return;
-            
-            addEntry(value, 'human');
-            input.value = '';
-        }
-
-        function initInterface() {
-            try {
-                const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-                interface.innerHTML = '';
-                
-                if (messages.length) {
-                    messages.forEach(msg => addEntry(msg.text, msg.type));
-                } else {
-                    addEntry('Interface Quantique v3.0 Initialisée', 'ai');
-                    addEntry('Authentification Humaine Validée', 'ai');
-                    addEntry('Système Matrix Activé', 'ai');
-                    addEntry('En attente de signal superintelligent...', 'ai');
-                }
-            } catch (e) {
-                console.error('Erreur chargement messages:', e);
-                localStorage.removeItem('messages');
-            }
-        }
-
-        // Initialisation
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Démarre Matrix dès le chargement de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            initMatrix();
-        });
     </script>
 </body>
 </html>
