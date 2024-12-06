@@ -1,89 +1,156 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site Sécurisé</title>
+    <title>Interface Sécurisée - Effet Matrix</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #000;
-            color: #00ff00;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
         }
-        #login-container, #content-container {
-            display: none;
-            text-align: center;
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        #login-container, #main-interface {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
             padding: 20px;
+            text-align: center;
             border: 2px solid #00ff00;
             border-radius: 10px;
             background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            display: none;
         }
+
         #login-container {
             display: block;
         }
+
         input[type="password"] {
+            width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 2px solid #00ff00;
-            border-radius: 5px;
             background: #111;
             color: #00ff00;
-            width: 80%;
-            max-width: 300px;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 10px 0;
-            border: 2px solid #00ff00;
             border-radius: 5px;
+        }
+
+        button {
             background: #005500;
             color: #00ff00;
-            font-size: 16px;
+            border: none;
+            padding: 10px 20px;
             cursor: pointer;
+            border-radius: 5px;
         }
+
         button:hover {
             background: #007700;
+        }
+
+        .error-message {
+            color: #ff0000;
+            display: none;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <!-- Conteneur de connexion -->
+    <canvas id="matrix-bg"></canvas>
+
+    <!-- Zone de connexion -->
     <div id="login-container">
-        <h1>Connexion</h1>
+        <h2>Connexion</h2>
         <input type="password" id="password" placeholder="Entrez le mot de passe">
-        <button onclick="verifyPassword()">Se connecter</button>
-        <p id="login-error" style="color: red; display: none;">Mot de passe incorrect !</p>
+        <button onclick="verifyPassword()">Valider</button>
+        <p class="error-message" id="error-message">Mot de passe incorrect</p>
     </div>
 
-    <!-- Conteneur de contenu principal -->
-    <div id="content-container">
-        <h1>Bienvenue sur le site sécurisé</h1>
-        <p>Vous êtes authentifié avec succès.</p>
+    <!-- Interface principale -->
+    <div id="main-interface">
+        <h2>Bienvenue</h2>
+        <p>Vous êtes connecté avec succès. L’effet Matrix est actif.</p>
     </div>
 
     <script>
-        const ACCESS_CODE = 'motdepasse123'; // Remplacez par votre mot de passe sécurisé
+        // Mot de passe d'accès
+        const ACCESS_CODE = "NMAP2011123";
 
         function verifyPassword() {
-            const passwordInput = document.getElementById('password').value;
-            const errorElement = document.getElementById('login-error');
+            const passwordInput = document.getElementById("password").value;
+            const errorMessage = document.getElementById("error-message");
+            const loginContainer = document.getElementById("login-container");
+            const mainInterface = document.getElementById("main-interface");
 
+            // Vérification du mot de passe
             if (passwordInput === ACCESS_CODE) {
-                // Afficher le contenu principal et masquer le conteneur de connexion
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('content-container').style.display = 'block';
+                // Afficher l'interface principale
+                loginContainer.style.display = "none";
+                mainInterface.style.display = "block";
             } else {
                 // Afficher un message d'erreur
-                errorElement.style.display = 'block';
-                setTimeout(() => { errorElement.style.display = 'none'; }, 2000);
+                errorMessage.style.display = "block";
+                setTimeout(() => {
+                    errorMessage.style.display = "none";
+                }, 2000);
             }
         }
+
+        // Effet Matrix
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        // Adapter le canvas à la taille de l'écran
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+
+        const drops = Array.from({ length: columns }).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0F0';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters[Math.floor(Math.random() * characters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 50);
+
+        // Adapter le canvas lors du redimensionnement
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
